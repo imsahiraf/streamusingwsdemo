@@ -1,27 +1,65 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <title>WebSocket Client</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
 </head>
+
 <body>
+
   <div id="messages"></div>
 
   <script>
-    const ws = new WebSocket('ws://localhost:8080');
 
-    ws.onopen = function() {
-      console.log('Connected to server');
-    };
+    const username = 'testuser';
+    const password = 'pass@123';
 
-    ws.onmessage = function(event) {
-      const data = JSON.parse(event.data);
-      $('#messages').html(`<p>Here the random generated number for a second is ${data}</p>`);
-    };
+    $.ajax({
+      url: 'http://localhost:8080/login',
+      type: 'POST',
+      data: JSON.stringify({ username: username, password: password }),
+      contentType: 'application/json',
+      success: function (response) {
+        // Store the token received in the response as a variable
+        const token = response;
+        console.log(response)
+        WsConnect(token);
+      },
+      error: function (xhr, status, error) {
+        console.log(xhr)
+        if (xhr.status == 401) {
+          $('#messages').html(`<p>You are trying to login with wrong credentials.</p>`);
+        } else if (xhr.status == 402) {
+          $('#messages').html(`<p>You are already logged in with these credentials.</p>`);
+        }
+      }
+    });
 
-    ws.onclose = function() {
-      console.log('Disconnected from server');
-    };
+
+    function WsConnect(token) {
+
+      const ws = new WebSocket(`ws://localhost:8081?token=${token}`, [token]);
+
+      ws.onopen = function () {
+        console.log('Connected to server');
+        // Send the token in the headers of the first message sent to the server
+        // ws.setRequestHeadersr('Authorization', 'Bearer ' + token);rs
+        ws.send(JSON.stringify({ token: token }));
+      };
+
+      ws.onmessage = function (event) {
+        const data = JSON.parse(event.data);
+        console.log(data)
+        $('#messages').html(`<p>Here the random generated number for a second is ${data}</p>`);
+      };
+
+      ws.onclose = function () {
+        console.log('Disconnected from server');
+      };
+    }
+
   </script>
 </body>
+
 </html>

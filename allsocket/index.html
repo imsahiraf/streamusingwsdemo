@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>WebSocket Example</title>
+  <script>
+    const socket = new WebSocket('ws://localhost:7575');
+
+    function authenticate() {
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+
+      // Send the username and password to the server to authenticate the WebSocket connection
+      socket.send(JSON.stringify({ username, password }));
+    }
+
+    socket.addEventListener('open', function (event) {
+      console.log('WebSocket connection opened');
+    });
+
+    socket.addEventListener('message', function (event) {
+      const data = JSON.parse(event.data);
+      if (data.randomNumber) {
+        // If authentication is successful, display the random number received from the server
+        document.getElementById('random-number').textContent = data.randomNumber;
+      } else {
+        // If authentication fails, display an error message
+        document.getElementById('error-message').textContent = 'Authentication failed';
+      }
+    });
+
+    socket.addEventListener('close', function (event) {
+      console.log('WebSocket connection closed');
+    });
+  </script>
+</head>
+<body>
+  <div>
+    <label for="username">Username:</label>
+    <input type="text" id="username" name="username">
+  </div>
+  <div>
+    <label for="password">Password:</label>
+    <input type="password" id="password" name="password">
+  </div>
+  <div>
+    <button onclick="authenticate()">Login</button>
+    <p id="error-message"></p>
+  </div>
+  <div>
+    <p>Random number: <span id="random-number"></span></p>
+  </div>
+</body>
+</html>
