@@ -1,7 +1,7 @@
 const http = require('http');
 const WebSocket = require('ws');
 
-const username = 'anurag';
+const username = 'testuser';
 const password = 'pass@123';
 
 const data = JSON.stringify({ username: username, password: password });

@@ -22,9 +22,6 @@
       if (data.randomNumber) {
         // If authentication is successful, display the random number received from the server
         document.getElementById('random-number').textContent = data.randomNumber;
-      } else {
-        // If authentication fails, display an error message
-        document.getElementById('error-message').textContent = 'Authentication failed';
       }
     });
 

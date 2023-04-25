@@ -4,7 +4,7 @@ require __DIR__ . '/vendor/autoload.php';
 use WebSocket\Client;
 
 // Set the username and password
-$username = 'anurag';
+$username = 'mrzulf';
 $password = 'pass@123';
 
 // Create a JSON payload with the credentials

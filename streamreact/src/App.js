@@ -9,7 +9,7 @@ function WebSocketClient() {
       try {
         const response = await axios.post(
           "http://localhost:8080/login",
-          { username: "anurag", password: "pass@123" },
+          { username: "viraj", password: "pass@123" },
           { headers: { "Content-Type": "application/json" } }
         );
         const token = response.data;

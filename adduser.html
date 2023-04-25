@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Add User</title>
+  </head>
+  <body>
+    <h1>Add User</h1>
+    <form id="addUserForm">
+      <label for="username">Username:</label>
+      <input type="text" id="username" name="username"><br>
+      <label for="password">Password:</label>
+      <input type="password" id="password" name="password"><br>
+      <button type="submit">Submit</button>
+    </form>
+    <div id="result"></div>
+    <script>
+      const form = document.querySelector('#addUserForm');
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const username = document.querySelector('#username').value;
+        const password = document.querySelector('#password').value;
+        const response = await fetch('http://localhost:8080/adduser', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ username, password })
+        });
+        const result = await response.json();
+        document.querySelector('#result').textContent = JSON.stringify(result);
+      });
+    </script>
+  </body>
+</html>
