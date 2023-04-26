@@ -8,19 +8,21 @@ const wss = new WebSocket.Server({ port: 8081 });
 const mongoose = require('mongoose');
 const redis = require("redis");
 const redisclient = redis.createClient();
+const subscriber = redisclient.duplicate();
 let lastIndex = -1;
 (async () => {
-    await redisclient.connect();
+  await redisclient.connect();
 })();
 
 console.log("Connecting to the Redis");
 
 redisclient.on("ready", () => {
-    console.log("Connected!");
+  console.log("Connected!");
 });
+subscriber.connect();
 
 redisclient.on("error", (err) => {
-    console.log("Error in the Connection");
+  console.log("Error in the Connection");
 });
 
 const generateRandomNumber = () => {
@@ -28,14 +30,14 @@ const generateRandomNumber = () => {
   console.log('Generated random number:', randomNumber); // add this line to check the value of randomNumber
   // console.log(typeof randomNumber)
   // redisclient.lPush('key', randomNumber.toString());
-
-  redisclient.rPush('randomNumbers', randomNumber.toString(), (err, reply) => { // store number in Redis list
-      if (err) {
-          console.log('Error in rPush:', err); // add this line to log any errors
-      } else {
-          console.log('Stored ' + randomNumber + ' in Redis list');
-      }
-  });
+  redisclient.publish("random", randomNumber.toString());
+  // redisclient.rPush('randomNumbers', randomNumber.toString(), (err, reply) => { // store number in Redis list
+  //   if (err) {
+  //     console.log('Error in rPush:', err); // add this line to log any errors
+  //   } else {
+  //     console.log('Stored ' + randomNumber + ' in Redis list');
+  //   }
+  // });
 }
 
 setInterval(generateRandomNumber, 1000); // generate a random number every second
@@ -100,24 +102,24 @@ const showNewNumbersFromRedis = () => {
   // }
 
   redisclient.lRange("randomNumbers", lastIndex + 1, -1)
-      .then((numbers) => {
-          // console.log("New numbers from Redis: " + numbers.join(', '));
-          if (numbers.length > 0) {
-              lastIndex += numbers.length;
-          }
+    .then((numbers) => {
+      // console.log("New numbers from Redis: " + numbers.join(', '));
+      if (numbers.length > 0) {
+        lastIndex += numbers.length;
+      }
 
-          // send any new numbers to the client
-          numbers.forEach((number) => {
-              wss.clients.forEach(function each(client) {
-                  if (client.readyState === WebSocket.OPEN) {
-                      client.send(JSON.stringify(parseInt(number)));
-                  }
-              });
-          });
-      })
-      .catch((err) => {
-          console.log("Error reading numbers from Redis: " + err);
+      // send any new numbers to the client
+      numbers.forEach((number) => {
+        wss.clients.forEach(function each(client) {
+          if (client.readyState === WebSocket.OPEN) {
+            client.send(JSON.stringify(parseInt(number)));
+          }
+        });
       });
+    })
+    .catch((err) => {
+      console.log("Error reading numbers from Redis: " + err);
+    });
 };
 
 // setInterval(showNewNumbersFromRedis, 1000); // fetch new numbers every second an this one 
@@ -153,9 +155,14 @@ wss.on('connection', function connection(ws, req) {
     console.log(loggedInUsers)
 
     // Send any new numbers from Redis to the client every second
-    const redisInterval = setInterval(() => {
-      showNewNumbersFromRedis();
-    }, 1000);
+    // const redisInterval = setInterval(() => {
+    //   showNewNumbersFromRedis();
+    // }, 1000);
+    
+    subscriber.subscribe('random', (message) => {
+      ws.send(message)
+      console.log(message); // 'message'
+      });
 
     ws.on('close', function close() {
       console.log('Client disconnected');
