@@ -8,7 +8,6 @@ const wss = new WebSocket.Server({ port: 8081 });
 const mongoose = require('mongoose');
 const redis = require("redis");
 const subscriber = redis.createClient();
-let lastIndex = -1;
 
 console.log("Connecting to the Redis");
 
@@ -24,6 +23,7 @@ subscriber.on("error", (err) => {
 const secret = 'my_secret_key';
 
 var loggedInUsers = [];
+var loggedUsers = [];
 
 app.use(cors());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -34,7 +34,8 @@ mongoose.connect('mongodb://localhost/websocketdemo');
 // Define the user schema
 const userSchema = new mongoose.Schema({
     username: String,
-    password: String
+    password: String,
+    type: String
 });
 
 
@@ -55,9 +56,12 @@ app.post('/login', function (req, res) {
                 if (user.username && loggedInUsers.includes(user.username)) {
                     res.status(402).send('You are already logged in!');
                 } else if (user && user.password === password) {
+                    delete user.password;
+                    loggedUsers[user.username] = user;
                     // Generate JWT token with a secret key and set the token as a cookie
                     const token = jwt.sign({ username }, secret);
                     res.status(200).send(token);
+                    console.log(loggedUsers)
                 } else {
                     res.status(401).send('Invalid username or password');
                 }
@@ -105,7 +109,17 @@ wss.on('connection', function connection(ws, req) {
         console.log(loggedInUsers)
 
         subscriber.subscribe('random', (message) => {
-            ws.send(message)
+            if(loggedUsers[user].type && loggedUsers[user].type == 'even' && message % 2==0){
+                console.log('One')
+                ws.send(message)
+            } else if (loggedUsers[user].type && loggedUsers[user].type == 'odd' && message % 2!=0) {
+                console.log('Two')
+                ws.send(message)
+            } else if (!loggedUsers[user].type){
+                console.log('Aja')
+                ws.send(message)
+            }
+            
         });
 
         ws.on('close', function close() {
